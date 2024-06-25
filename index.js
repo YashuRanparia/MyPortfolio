@@ -15,10 +15,6 @@ button.addEventListener('mouseout', () => {
 const resumeUrl = "https://yashuranparia.000webhostapp.com/assests/resume/YashuRanparia.pdf";
 
 button.addEventListener("click", function () {
-    // const refer = document.createElement("a")
-    // refer.href = "https://drive.google.com/file/d/1Y1V3L-T6o74YJMGWEjk2eBOqhvBglHF4/view?usp=sharing"
-    // refer.target = "_blank"
-    // refer.click()
 
     const downloadLink = document.createElement("a");
     downloadLink.href = resumeUrl;
@@ -136,14 +132,57 @@ experience.children[0].appendChild(exp)
 
 
 //------------------------------------------------- Project Section -------------------------------------------------------
+const skills_sec = document.getElementById("skills")
+
+const skill_container = document.createElement("div")
+skill_container.classList.add(["skill-container"])
+
+technologies = {
+    "python": "https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg",
+    "r": "https://icon.icepanel.io/Technology/svg/R-.svg",
+    "cpp": "https://raw.githubusercontent.com/devicons/devicon/master/icons/cplusplus/cplusplus-original.svg",
+    "javascript": "https://icon.icepanel.io/Technology/svg/JavaScript.svg",
+    "scikit-learn": "https://upload.wikimedia.org/wikipedia/commons/0/05/Scikit_learn_logo_small.svg",
+    "pandas": "https://raw.githubusercontent.com/devicons/devicon/2ae2a900d2f041da66e950e4d48052658d850630/icons/pandas/pandas-original.svg",
+    "matplotlib": "https://icon.icepanel.io/Technology/svg/Matplotlib.svg",
+    "seaborn": "https://seaborn.pydata.org/_images/logo-mark-lightbg.svg",
+    "opencv": "https://www.vectorlogo.zone/logos/opencv/opencv-icon.svg",
+
+    "keras": "https://icon.icepanel.io/Technology/svg/Keras.svg",
+    "tensorflow": "https://www.vectorlogo.zone/logos/tensorflow/tensorflow-icon.svg",
+    "git": "https://icon.icepanel.io/Technology/svg/Git.svg",
+    // "flask": "https://www.vectorlogo.zone/logos/pocoo_flask/pocoo_flask-icon.svg",
+    "flutter": "https://www.vectorlogo.zone/logos/flutterio/flutterio-icon.svg",
+    // "kotlin": "https://www.vectorlogo.zone/logos/kotlinlang/kotlinlang-icon.svg",
+    
+}
+
+
+for (const key in technologies) {
+    const tech_logo_card = document.createElement("div")
+    tech_logo_card.classList.add(["tech-logo-card"])
+
+    const tech_logo = document.createElement("img")
+    tech_logo.classList.add(["tech-logo"])
+    tech_logo.src = technologies[key]
+
+    if(key == "flask"){
+        tech_logo.style.color = "white"
+    }
+
+    // tech_logo_card.appendChild(tech_logo)
+
+    skill_container.appendChild(tech_logo)
+}
+
+skills_sec.children[0].appendChild(skill_container)
+
+
+
+//------------------------------------------------- Project Section -------------------------------------------------------
 
 const projects = document.createElement("div")
 projects.classList.add(["project-cards"])
-
-// const anim = document.createElement("div")
-// anim.classList.add(["orange-strip"])
-// projects.appendChild(anim)
-
 
 
 
@@ -218,126 +257,69 @@ project_sec.appendChild(projects)
 //------------------------------------------------- Footer -------------------------------------------------------
 
 const footer = document.getElementById("footer")
-footer.style.border = "0.5px solid #7e8c9c"
-footer.style.width = "100%"
-// footer.style.height = "30vh"
-footer.style.margin = "4rem 0px 0px 0px"
-// footer.appendChild(footer)
+footer.classList.add(["footer"])
 
-function createSocialLink(href, iconClass) {
+const links = document.createElement("div")
+links.classList.add(["media-links"])
+
+media_links_dict = {
+    "linkedin":{"link":"https://www.linkedin.com/in/yashu-ranparia-5487a8229","icon_class":["bi", "bi-linkedin", "link-icons"]},
+    "github":{"link":"https://github.com/YashuRanparia","icon_class":["bi", "bi-github", "link-icons"]},
+    "twitter":{"link":"https://twitter.com/R__Yashu?t=ZLoD9O2oIiiG4wGB0MIJYw&s=09","icon_class":["bi", "bi-twitter", "link-icons"]},
+}
+
+for (const key in media_links_dict) {
     const link = document.createElement("a");
-    link.href = href;
-    // link.style.fontSize = "1.5rem"
+    link.classList.add(["contact-icon-link"])
+    link.href = media_links_dict[key]["link"];
 
     const icon = document.createElement("span");
-    iconClass.forEach(element => {
+    media_links_dict[key]["icon_class"].forEach(element => {
         icon.classList.add(element)
     });
 
     link.appendChild(icon);
 
-    return link;
+    links.appendChild(link)
 }
-
-const linkedinLink = createSocialLink("https://www.linkedin.com/in/yashu-ranparia-5487a8229", ["bi", "bi-linkedin", "link-icons"]);
-const githubLink = createSocialLink("https://github.com/YashuRanparia", ["bi", "bi-github", "link-icons"]);
-const twitterLink = createSocialLink("https://twitter.com/R__Yashu?t=ZLoD9O2oIiiG4wGB0MIJYw&s=09", ["bi", "bi-twitter", "link-icons"]);
-
-const links = document.createElement("div")
-links.style.width = "100%"
-// links.style.height = "30%"
-links.style.alignItems = "center"
-links.style.display = "flex"
-links.style.justifyContent = "center"
-links.style.flexDirection = "row"
-links.style.flex = "1"
-links.style.margin = "3rem 0px"
-
-links.appendChild(linkedinLink)
-links.appendChild(githubLink)
-links.appendChild(twitterLink)
 
 
 const madeby = document.createElement("p")
-madeby.style.textAlign = "center"
-madeby.style.width = "100%"
-madeby.style.color = "#7e8c9c"
-madeby.style.fontSize = "18px"
-madeby.style.letterSpacing = "1px"
+madeby.classList.add(["made-by-me"])
 madeby.textContent = "Created by - Yashu Ranparia"
-madeby.style.verticalAlign = "baseline"
-
 
 const contact_heading = document.createElement("p")
-contact_heading.style.width = "100%"
-contact_heading.style.color = "#7e8c9c"
-contact_heading.style.fontSize = "30px"
-contact_heading.style.margin = "10px"
-contact_heading.style.fontWeight = "bold"
-contact_heading.style.textAlign = "center"
+contact_heading.classList.add(["contact-heading"])
 contact_heading.textContent = "Contact"
 
 const contact_detail = document.createElement("div")
-contact_detail.style.width = "100%"
-contact_detail.style.color = "#7e8c9c"
-contact_detail.style.justifyContent = "center"
-contact_detail.style.display = "flex"
-contact_detail.style.flexWrap = "wrap"
-contact_detail.style.flexDirection = "row"
-contact_detail.style.flex = "1"
+contact_detail.classList.add(["contact-detail"])
 
-const email = document.createElement("div")
-email.style.color = "#7e8c9c"
-email.style.display = "flex"
-email.style.justifyContent = "center"
-email.style.alignItems = "center"
-email.style.margin = "10px"
-email.style.width = "100%"
+contact_dict = {
+    "email": {"text": "yashuranparia136@gmail.com", "icon_class": ["bi", "bi-envelope"]},
+    "phone_number": {"text": "+91-942-6573-656", "icon_class": ["bi", "bi-telephone"]}
+}
 
-const email_text = document.createElement("p")
-email_text.textContent = "yashuranparia136@gmail.com"
-email_text.style.fontSize = "20px"
-email_text.style.padding = "0px 10px"
-email_text.style.margin = "0px"
-email_text.style.textAlign = "center"
+for (const key in contact_dict) {
+    const contact_card = document.createElement("div")
+    contact_card.classList.add(["contact-card"])
 
-const email_icon = createSocialLink("", ["bi", "bi-envelope"])
-email_icon.style.width = "40px"
-email_icon.style.display = "flex"
-email_icon.style.justifyContent = "center"
-email_icon.style.alignItems = "center"
-email_icon.children[0].style.fontSize = "23px"
-email_icon.children[0].style.margin = "0"
-email_icon.children[0].style.color = "#7e8c9c"
-email_icon.style.cursor = "auto"
-// email_icon.children[0].style.textAlign = "center"
+    const contact_text = document.createElement("p")
+    contact_text.classList.add(['contact-text'])
+    contact_text.textContent = contact_dict[key]["text"]
 
+    const contact_icon = document.createElement("i");
+    contact_icon.classList.add(["contact-icon"])
+    contact_dict[key]["icon_class"].forEach(element => {
+        contact_icon.classList.add(element)
+    });
 
-const phone_text = email_text.cloneNode(true)
-phone_text.textContent = "+91-942-6573-656"
+    contact_card.appendChild(contact_icon)
+    contact_card.appendChild(contact_text)
 
-const phone_icon = createSocialLink("", ["bi", "bi-telephone"])
-phone_icon.style.width = "40px"
-phone_icon.style.display = "flex"
-phone_icon.style.justifyContent = "center"
-phone_icon.style.alignItems = "center"
-phone_icon.children[0].style.fontSize = "23px"
-phone_icon.children[0].style.margin = "0"
-phone_icon.children[0].style.color = "#7e8c9c"
-phone_icon.style.cursor = "auto"
-// phone_icon.children[0].style.textAlign = "center"
+    contact_detail.appendChild(contact_card)
+}
 
-
-const phone = email.cloneNode(true)
-
-email.appendChild(email_icon)
-email.appendChild(email_text)
-
-phone.appendChild(phone_icon)
-phone.appendChild(phone_text)
-
-contact_detail.appendChild(email)
-contact_detail.appendChild(phone)
 
 footer.appendChild(contact_heading)
 footer.appendChild(contact_detail)
@@ -349,12 +331,12 @@ footer.appendChild(madeby)
 const sections = document.querySelectorAll("section");
 
 const options = {
-    threshold: 0.3, // Trigger animation when 40% of the section is visible
+    threshold: 0.3,
 };
 
-// Function to add animation class to a section
+
 function animateSectionStart(section) {
-    section.classList.add("rise-up"); // Replace "fade-in" with your desired animation class
+    section.classList.add("rise-up");
 }
 
 function animateSectionEnd(section) {
@@ -363,7 +345,7 @@ function animateSectionEnd(section) {
     }, 100);
 }
 
-// Loop through sections and add event listeners
+
 sections.forEach((section) => {
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach((entry) => {
@@ -371,9 +353,9 @@ sections.forEach((section) => {
             // observer.unobserve(section);
             if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
                 animateSectionEnd(section);
-                observer.unobserve(section); // Unobserve after animation
+                observer.unobserve(section);
             }
         });
     }, options);
-    observer.observe(section); // Observe each section for visibility
+    observer.observe(section);
 });
