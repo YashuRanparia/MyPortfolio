@@ -38,7 +38,7 @@ canvas{position:fixed;inset:0;display:block}
 .panel{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
 .panel aside{padding:1.5rem 1rem;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:1.2rem}
 .panel nav{display:grid;gap:.4rem}.panel nav a{text-transform:capitalize;text-decoration:none;color:var(--dim);padding:.3rem 0}.panel nav a:hover{color:var(--ink)}
-.panel main{padding:2rem;max-width:760px}
+.panel main{padding:2rem;max-width:1150px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}
 .stack{display:grid;gap:1rem}
 label{display:grid;gap:.3rem;font-size:.85rem;color:var(--dim)}label.row,.row{display:flex;gap:.5rem;align-items:center}
@@ -63,3 +63,13 @@ button.danger{background:#ff5d6c!important;color:#fff!important}
 .chatbox input{border:0;border-radius:0;background:transparent;color:var(--ink);padding:.7rem;flex:1;font:inherit;font-size:.85rem}
 .chatbox form button{background:none;border:0;color:#ffcf6b;padding:0 .9rem;font-weight:600}
 @media(max-width:700px){.chat{bottom:6rem;right:1rem}}
+/* admin power-ups */
+.md{color:#c9c6d8;line-height:1.6;font-size:.95rem}.md p{margin:.6rem 0}.md a{color:var(--col)}.md ul,.md ol{padding-left:1.2rem}
+.md code{background:#ffffff14;padding:.1rem .3rem;border-radius:4px;font-size:.85em}.md pre{background:#ffffff0d;padding:.7rem;border-radius:8px;overflow:auto}
+.editor{grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start}
+.preview.side{position:sticky;top:1rem;transform:none;height:auto;max-height:80vh;width:auto;border:1px dashed var(--line);border-radius:12px;background:#05060c;padding:1.2rem}
+.grip{cursor:grab;color:var(--dim);padding:0 .4rem;user-select:none}
+.card.dragging{opacity:.4;border-style:dashed}
+.log{width:100%;border-collapse:collapse;font-size:.85rem}.log td{padding:.45rem .6rem;border-bottom:1px solid var(--line);color:var(--dim)}.log td:nth-child(2){color:var(--ink)}
+.dim{color:var(--dim)}
+@media(max-width:1100px){.editor{grid-template-columns:1fr}}

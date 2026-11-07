@@ -15,6 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {HUBS.map((h) => <Link key={h} href={`/admin/nodes/${h}`}>{h}</Link>)}
           <Link href="/admin/settings">settings</Link>
           <Link href="/admin/security">security</Link>
+          <Link href="/admin/activity">activity</Link>
         </nav>
         <form action={logout}><button className="ghost">Sign out</button></form>
       </aside>

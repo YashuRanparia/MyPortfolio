@@ -43,3 +43,10 @@ export const loginAttempts = pgTable('login_attempts', {
   key: text('key').notNull(),
   at: timestamp('at').notNull().defaultNow(),
 });
+
+export const auditLog = pgTable('audit_log', {
+  id: serial('id').primaryKey(),
+  at: timestamp('at').notNull().defaultNow(),
+  action: text('action').notNull(),
+  detail: text('detail').notNull().default(''),
+});

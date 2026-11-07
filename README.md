@@ -31,6 +31,9 @@ The app container pushes the schema and seeds on every start (idempotent). It ru
 
 Lost your password or 2FA device: `npm run seed -- --reset-admin` with a new `ADMIN_PASSWORD`.
 
+## Admin extras
+Markdown details (rendered safely: no raw HTML, `javascript:` links dropped), live preview beside the editor, drag-and-drop ordering (↑/↓ buttons remain for keyboard), and an activity log at `/admin/activity`. After pulling this version run `npm run db:push` to add the `audit_log` table.
+
 ## AI guide (optional, free providers)
 Set `LLM_API_KEY` and an "✦ Ask" button appears. It answers only from your published content and flies the camera to the star it cites. Same-origin only, 20 questions per IP per hour.
 Works with any OpenAI-compatible provider that has a free tier: default is **Groq**; set `LLM_BASE_URL` / `LLM_MODEL` for **OpenRouter** (`:free` models) or **Gemini**. See `.env.example`. Model names and free limits change, so check the provider's docs. Leave the key empty to hide the button.

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Chat from './Chat';
+import Md from './Md';
 
 export type NodeData = { id: number; title: string; summary: string; body: string; url: string; imageUrl: string; tags: string[] };
 export type HubData = { id: string; name: string; blurb: string; color: string; x: number; y: number; nodes: NodeData[] };
@@ -177,7 +178,7 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl, chat
           <div className="tag">{sel.hub.name}</div><h2>{sel.node.title}</h2>
           {sel.node.imageUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={sel.node.imageUrl} alt="" />}
           {sel.node.summary && <p className="lead">{sel.node.summary}</p>}
-          {sel.node.body.split(/\n{2,}/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)}
+          {sel.node.body && <Md>{sel.node.body}</Md>}
           {sel.node.tags.length > 0 && <div className="chips">{sel.node.tags.map((t) => <span key={t}>{t}</span>)}</div>}
           {sel.node.url && <a className="cta" href={sel.node.url} target={sel.node.url.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer">Open ↗</a>}
           <p><a href="#" className="back" onClick={(e) => { e.preventDefault(); choose({ hub: sel.hub }); }}>← {sel.hub.name}</a></p>

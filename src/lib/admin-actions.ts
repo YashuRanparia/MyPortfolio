@@ -5,11 +5,12 @@ import { redirect } from 'next/navigation';
 import { hash, verify } from '@node-rs/argon2';
 import { z } from 'zod';
 import { db } from '../db';
-import { admins, HUBS, nodes, settings } from '../db/schema';
+import { admins, auditLog, HUBS, nodes, settings } from '../db/schema';
 import { requireAdmin } from './auth';
 import { endSession, startSession } from './session';
 import { checkCode, newSecret } from './totp';
 
+const audit = (action: string, detail = '') => db.insert(auditLog).values({ action, detail });
 const refresh = () => { revalidatePath('/'); revalidatePath('/admin', 'layout'); };
 const httpUrl = z.string().trim().refine((v) => v === '' || /^(https?:\/\/|mailto:)/i.test(v), 'URL must start with http(s):// or mailto:');
 const imgUrl = z.string().trim().refine((v) => v === '' || /^https:\/\//i.test(v), 'Image must be an https URL');
@@ -37,16 +38,19 @@ export async function saveNode(form: FormData) {
   });
   if (id) {
     await db.update(nodes).set({ ...data, updatedAt: new Date() }).where(and(eq(nodes.id, id), eq(nodes.hub, data.hub)));
+    await audit('node.update', `${data.hub}: ${data.title}`);
   } else {
     const [{ m }] = await db.select({ m: sql<number>`coalesce(max(${nodes.position}), -1)::int` }).from(nodes).where(eq(nodes.hub, data.hub));
     await db.insert(nodes).values({ ...data, position: m + 1 });
+    await audit('node.create', `${data.hub}: ${data.title}`);
   }
   refresh();
 }
 
 export async function deleteNode(form: FormData) {
   await requireAdmin();
-  await db.delete(nodes).where(eq(nodes.id, Number(form.get('id'))));
+  const [gone] = await db.delete(nodes).where(eq(nodes.id, Number(form.get('id')))).returning();
+  if (gone) await audit('node.delete', `${gone.hub}: ${gone.title}`);
   refresh();
 }
 
@@ -66,6 +70,17 @@ export async function moveNode(form: FormData) {
   refresh();
 }
 
+// Drag-and-drop: ids arrive in the new order; only rows of that hub are touched.
+export async function reorderNodes(hub: string, ids: number[]) {
+  await requireAdmin();
+  const h = z.enum(HUBS).parse(hub), list = z.array(z.number().int()).max(500).parse(ids);
+  await db.transaction(async (tx) => {
+    for (const [pos, id] of list.entries()) await tx.update(nodes).set({ position: pos }).where(and(eq(nodes.id, id), eq(nodes.hub, h)));
+  });
+  await audit('node.reorder', h);
+  refresh();
+}
+
 // ---- settings ----
 const Color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 export async function saveSettings(form: FormData) {
@@ -80,6 +95,7 @@ export async function saveSettings(form: FormData) {
     hubs,
   };
   await db.insert(settings).values({ id: 1, ...v }).onConflictDoUpdate({ target: settings.id, set: v });
+  await audit('settings.update');
   refresh();
 }
 
@@ -93,6 +109,7 @@ export async function changePassword(_: Msg, form: FormData): Promise<Msg> {
   if (!(await verify(admin.passwordHash, String(form.get('current') ?? '')))) return { err: 'Current password is wrong.' };
   const [row] = await db.update(admins).set({ passwordHash: await hash(next), sessionVersion: sql`${admins.sessionVersion} + 1` })
     .where(eq(admins.id, admin.id)).returning();
+  await audit('password.change');
   await startSession(row.id, row.sessionVersion); // keep this device, drop every other session
   return { ok: 'Password changed. Other sessions were signed out.' };
 }
@@ -100,6 +117,7 @@ export async function changePassword(_: Msg, form: FormData): Promise<Msg> {
 export async function signOutEverywhere() {
   const admin = await requireAdmin();
   await db.update(admins).set({ sessionVersion: sql`${admins.sessionVersion} + 1` }).where(eq(admins.id, admin.id));
+  await audit('session.revoke_all');
   await endSession();
   redirect('/admin/login');
 }
@@ -114,6 +132,7 @@ export async function confirmTotp(_: Msg, form: FormData): Promise<Msg> {
   const admin = await requireAdmin();
   if (!admin.totpSecret || !checkCode(admin.totpSecret, String(form.get('code') ?? ''))) return { err: 'Code did not match. Try the next one.' };
   await db.update(admins).set({ totpEnabled: true }).where(eq(admins.id, admin.id));
+  await audit('2fa.enable');
   revalidatePath('/admin/security');
   return { ok: '2FA enabled.' };
 }
@@ -122,6 +141,7 @@ export async function disableTotp(_: Msg, form: FormData): Promise<Msg> {
   const admin = await requireAdmin();
   if (!(await verify(admin.passwordHash, String(form.get('password') ?? '')))) return { err: 'Password is wrong.' };
   await db.update(admins).set({ totpSecret: null, totpEnabled: false }).where(eq(admins.id, admin.id));
+  await audit('2fa.disable');
   revalidatePath('/admin/security');
   return { ok: '2FA disabled.' };
 }

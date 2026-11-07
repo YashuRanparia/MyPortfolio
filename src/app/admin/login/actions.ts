@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verify, hash } from '@node-rs/argon2';
 import { db } from '../../../db';
-import { admins, loginAttempts } from '../../../db/schema';
+import { admins, auditLog, loginAttempts } from '../../../db/schema';
 import { startSession } from '../../../lib/session';
 import { checkCode } from '../../../lib/totp';
 
@@ -34,6 +34,7 @@ export async function login(_: string | null, form: FormData): Promise<string | 
     return admin?.totpEnabled && passOk ? 'Invalid authenticator code.' : 'Invalid email or password.';
   }
   await db.delete(loginAttempts).where(eq(loginAttempts.key, key));
+  await db.insert(auditLog).values({ action: 'login', detail: ip });
   await startSession(admin.id, admin.sessionVersion);
   redirect('/admin');
 }
