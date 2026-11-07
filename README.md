@@ -28,7 +28,7 @@ npm run typecheck   # tsc
 npm test            # vitest: session tokens, 2FA codes, markdown safety, admin middleware
 npm run smoke       # black-box checks against a running build (BASE=http://localhost:3000)
 ```
-GitHub Actions (`.github/workflows/ci.yml`) runs all of it on every push against a Postgres service: typecheck, tests, build, schema push + seed, then smoke tests on the production server.
+Run all three before deploying. CI is not set up yet.
 
 ## SEO and operations
 - Set `SITE_URL` (e.g. `https://you.dev`) so canonical links, the sitemap and social cards use your real origin. Edit your **tagline** in Settings: it becomes the meta description.
