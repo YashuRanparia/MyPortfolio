@@ -1,0 +1,17 @@
+# `docker compose up --build` runs the whole stack (site + admin + Postgres).
+# Production deploys use Vercel + Neon instead; this is for local/self-hosted use.
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: constellation, POSTGRES_PASSWORD: constellation, POSTGRES_DB: constellation }
+    ports: ["5433:5432"]
+    volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U constellation"], interval: 2s, retries: 15 }
+  app:
+    build: .
+    depends_on: { db: { condition: service_healthy } }
+    env_file: .env.local   # SESSION_SECRET, ADMIN_*, CLOUDINARY_*
+    environment:
+      DATABASE_URL: postgres://constellation:constellation@db:5432/constellation
+    ports: ["3000:3000"]
+volumes: { dbdata: {} }
