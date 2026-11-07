@@ -52,3 +52,14 @@ button.danger{background:#ff5d6c!important;color:#fff!important}
 .err{color:#ff8f9b;font-size:.85rem}.ok{color:#7ee0a0;font-size:.85rem}
 .upload{display:grid;gap:.4rem}
 @media(max-width:700px){.panel{grid-template-columns:1fr}.panel aside{border-right:0;border-bottom:1px solid var(--line)}.panel nav{grid-auto-flow:column;overflow:auto}}
+/* chat guide */
+.chat{position:fixed;right:1.5rem;bottom:4.5rem;z-index:4;display:flex;flex-direction:column;align-items:flex-end;gap:.6rem}
+.chatfab{background:#ffcf6b;color:#04050b;border:0;border-radius:99px;padding:.6rem 1.1rem;font-weight:600;box-shadow:0 0 24px -4px #ffcf6b}
+.chatbox{width:min(320px,calc(100vw - 3rem));background:#0b0d17ee;border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(10px);overflow:hidden}
+.chatlog{max-height:260px;overflow:auto;padding:.8rem;display:grid;gap:.5rem}
+.chatlog p{margin:0;font-size:.85rem;line-height:1.45;padding:.5rem .7rem;border-radius:10px}
+.chatlog .user{background:#ffffff14;justify-self:end}.chatlog .assistant{background:#ffcf6b1f}.chatlog .dim{color:var(--dim);background:none;padding:0}
+.chatbox form{display:flex;border-top:1px solid var(--line)}
+.chatbox input{border:0;border-radius:0;background:transparent;color:var(--ink);padding:.7rem;flex:1;font:inherit;font-size:.85rem}
+.chatbox form button{background:none;border:0;color:#ffcf6b;padding:0 .9rem;font-weight:600}
+@media(max-width:700px){.chat{bottom:6rem;right:1rem}}

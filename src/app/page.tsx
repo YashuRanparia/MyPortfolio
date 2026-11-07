@@ -19,5 +19,5 @@ export default async function Home() {
     id, ...cfg[id], x: POS[id][0], y: POS[id][1],
     nodes: all.filter((n) => n.hub === id).map(({ id, title, summary, body, url, imageUrl, tags }) => ({ id, title, summary, body, url, imageUrl, tags })),
   }));
-  return <Constellation hubs={hubs} siteName={s?.siteName ?? 'Your Name'} tagline={s?.tagline ?? ''} resumeUrl={s?.resumeUrl ?? ''} />;
+  return <Constellation hubs={hubs} siteName={s?.siteName ?? 'Your Name'} tagline={s?.tagline ?? ''} resumeUrl={s?.resumeUrl ?? ''} chatEnabled={!!process.env.LLM_API_KEY} />;
 }

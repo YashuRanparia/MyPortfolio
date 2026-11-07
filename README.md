@@ -31,6 +31,10 @@ The app container pushes the schema and seeds on every start (idempotent). It ru
 
 Lost your password or 2FA device: `npm run seed -- --reset-admin` with a new `ADMIN_PASSWORD`.
 
+## AI guide (optional, free providers)
+Set `LLM_API_KEY` and an "✦ Ask" button appears. It answers only from your published content and flies the camera to the star it cites. Same-origin only, 20 questions per IP per hour.
+Works with any OpenAI-compatible provider that has a free tier: default is **Groq**; set `LLM_BASE_URL` / `LLM_MODEL` for **OpenRouter** (`:free` models) or **Gemini**. See `.env.example`. Model names and free limits change, so check the provider's docs. Leave the key empty to hide the button.
+
 ## Security model
 - No signup route; the single admin is created by the seed script.
 - Passwords: argon2id. Login is rate-limited (5 failures / 15 min per IP+email) and timing-equalised for unknown emails.

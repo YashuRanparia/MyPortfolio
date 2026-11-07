@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import Chat from './Chat';
 
 export type NodeData = { id: number; title: string; summary: string; body: string; url: string; imageUrl: string; tags: string[] };
 export type HubData = { id: string; name: string; blurb: string; color: string; x: number; y: number; nodes: NodeData[] };
@@ -8,7 +9,7 @@ type Star = NodeData & { x: number; y: number; r: number; ph: number; hub: HubDa
 
 const rnd = (seed: number) => { const x = Math.sin(seed * 9301 + 49297) * 233280; return x - Math.floor(x); };
 
-export default function Constellation({ hubs, siteName, tagline, resumeUrl }: { hubs: HubData[]; siteName: string; tagline: string; resumeUrl: string }) {
+export default function Constellation({ hubs, siteName, tagline, resumeUrl, chatEnabled }: { hubs: HubData[]; siteName: string; tagline: string; resumeUrl: string; chatEnabled: boolean }) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const [sel, setSel] = useState<Sel>(null);
   const [hintGone, setHintGone] = useState(false);
@@ -33,6 +34,9 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl }: { 
     const cam = { x: 0, y: 0, z: .8 }, tgt = { x: 0, y: 0, z: .8 }, mouse = { x: -999, y: -999 };
     let hover: HubData | Star | null = null;
     const trail: number[][] = [];
+    const comets: { x: number; y: number; vx: number; vy: number; life: number }[] = [];
+    const ripples: { x: number; y: number; age: number; col: string }[] = [];
+    let px = 0, py = 0, pz = 0;
     const homeZ = () => Math.max(.3, Math.min(.8, innerWidth / 1300, innerHeight / 1000));
     const bg = Array.from({ length: 420 }, (_, i) => ({ x: rnd(i) * 2400 - 1200, y: rnd(i + 999) * 1800 - 900, l: rnd(i + 5) * .8 + .15, r: rnd(i + 7) * 1.3 + .3, p: rnd(i + 3) * 6 }));
     const stars: Star[] = hubs.flatMap((h, hi) => h.nodes.map((n, i, a) => {
@@ -58,10 +62,37 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl }: { 
       t += .016;
       cam.x += (tgt.x - cam.x) * .07; cam.y += (tgt.y - cam.y) * .07; cam.z += (tgt.z - cam.z) * .07;
       ctx.clearRect(0, 0, W, H);
+      // camera velocity drives the warp streaks while flying between constellations
+      const dx0 = cam.x - px, dy0 = cam.y - py, dz0 = cam.z - pz; px = cam.x; py = cam.y; pz = cam.z;
+      const vel = Math.min(Math.hypot(dx0, dy0) * cam.z + Math.abs(dz0) * 400, 40);
+      const mvLen = Math.hypot(dx0, dy0) || 1;
+      for (const h of hubs) { // nebula clouds
+        const [nx, ny] = toS(h.x, h.y, .85), r = (380 + Math.sin(t * .4 + h.x) * 30) * cam.z;
+        const g = ctx.createRadialGradient(nx, ny, 0, nx, ny, r);
+        g.addColorStop(0, h.color + '1c'); g.addColorStop(1, h.color + '00');
+        ctx.fillStyle = g; ctx.fillRect(nx - r, ny - r, r * 2, r * 2);
+      }
       for (const s of bg) {
         const [x, y] = toS(s.x, s.y, s.l * .6);
         if (x < -5 || y < -5 || x > W + 5 || y > H + 5) continue;
-        ctx.fillStyle = `rgba(255,255,255,${s.l * (reduce ? 1 : .6 + .4 * Math.sin(t * 2 + s.p))})`; ctx.fillRect(x, y, s.r, s.r);
+        const a = s.l * (reduce ? 1 : .6 + .4 * Math.sin(t * 2 + s.p));
+        if (vel > 1.5 && !reduce) {
+          const len = vel * s.l * 1.6;
+          const ux = Math.abs(dz0) * 400 > Math.hypot(dx0, dy0) * cam.z ? (x - W / 2) / W * 2 * Math.sign(dz0) : dx0 / mvLen;
+          const uy = Math.abs(dz0) * 400 > Math.hypot(dx0, dy0) * cam.z ? (y - H / 2) / H * 2 * Math.sign(dz0) : dy0 / mvLen;
+          ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = s.r; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + ux * len, y + uy * len); ctx.stroke();
+        } else { ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.fillRect(x, y, s.r, s.r); }
+      }
+      ctx.lineWidth = 1;
+      if (!reduce) { // shooting stars
+        if (Math.random() < .004) comets.push({ x: Math.random() * W, y: Math.random() * H * .5, vx: 7 + Math.random() * 5, vy: 3 + Math.random() * 3, life: 1 });
+        for (let i = comets.length - 1; i >= 0; i--) {
+          const c = comets[i]; c.x += c.vx; c.y += c.vy; c.life -= .018;
+          if (c.life <= 0) { comets.splice(i, 1); continue; }
+          const g = ctx.createLinearGradient(c.x, c.y, c.x - c.vx * 9, c.y - c.vy * 9);
+          g.addColorStop(0, `rgba(255,255,255,${c.life})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.strokeStyle = g; ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x - c.vx * 9, c.y - c.vy * 9); ctx.stroke();
+        }
       }
       const active = selRef.current?.hub;
       const [cx, cy] = toS(0, 0);
@@ -73,6 +104,8 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl }: { 
           const [nx, ny] = toS(n.x, n.y);
           ctx.strokeStyle = h.color + (active === h || hover === n ? '99' : '33');
           ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(nx, ny); ctx.stroke();
+          const ns = stars.filter((q) => q.hub === h), nxt = ns[(ns.indexOf(n) + 1) % ns.length];
+          if (ns.length > 2) { const [rx, ry] = toS(nxt.x, nxt.y); ctx.strokeStyle = h.color + '1a'; ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(rx, ry); ctx.stroke(); }
           if (!reduce) { const p = (t * .3 + n.ph) % 1; ctx.fillStyle = h.color; ctx.globalAlpha = .7; ctx.fillRect(hx + (nx - hx) * p - 1, hy + (ny - hy) * p - 1, 2, 2); ctx.globalAlpha = 1; }
         }
       }
@@ -94,6 +127,12 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl }: { 
       }
       trail.push([mouse.x, mouse.y]); if (trail.length > 22) trail.shift();
       if (!reduce) trail.forEach(([x, y], i) => { ctx.fillStyle = `rgba(255,255,255,${i / trail.length * .5})`; ctx.beginPath(); ctx.arc(x, y, i / trail.length * 2.5, 0, 7); ctx.fill(); });
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i]; r.age += .03;
+        if (r.age >= 1) { ripples.splice(i, 1); continue; }
+        ctx.strokeStyle = r.col + Math.floor((1 - r.age) * 150).toString(16).padStart(2, '0'); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(r.x, r.y, r.age * 90, 0, 7); ctx.stroke(); ctx.lineWidth = 1;
+      }
       cv.style.cursor = dragging ? 'grabbing' : hover ? 'pointer' : 'grab';
       raf = requestAnimationFrame(frame);
     }
@@ -106,7 +145,7 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl }: { 
     };
     const up = () => {
       dragging = null;
-      if (moved < 6 && hover) { const s = hover as Star; choose('hub' in s ? { hub: s.hub, node: s } : { hub: hover as HubData }); }
+      if (moved < 6 && hover) { const s = hover as Star; ripples.push({ x: mouse.x, y: mouse.y, age: 0, col: ('hub' in s ? s.hub : (hover as HubData)).color }); choose('hub' in s ? { hub: s.hub, node: s } : { hub: hover as HubData }); }
     };
     const wheel = (e: WheelEvent) => { e.preventDefault(); tgt.z = Math.min(2.4, Math.max(.25, tgt.z * (e.deltaY < 0 ? 1.1 : .9))); };
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') choose(null); };
@@ -123,6 +162,7 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl }: { 
       <header className="top"><h1>{siteName}</h1><p>{tagline || 'drag to explore · click a star'}</p></header>
       {!hintGone && <div className="hint">Every point of light is something I&apos;ve made or learned.</div>}
       {resumeUrl && <a className="resume" href={resumeUrl} target="_blank" rel="noopener noreferrer">Résumé ↗</a>}
+      {chatEnabled && <Chat onNode={(id) => { const st = api.current.stars.find((n) => n.id === id); if (st) choose({ hub: st.hub, node: st }); }} />}
       <nav className="dock">
         <button className={!sel ? 'on' : ''} onClick={() => choose(null)}>✦ Overview</button>
         {hubs.map((h) => <button key={h.id} style={{ ['--col' as string]: h.color }} className={sel?.hub === h ? 'on' : ''} onClick={() => choose({ hub: h })}>{h.name}</button>)}
