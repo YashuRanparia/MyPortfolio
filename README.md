@@ -22,6 +22,21 @@ docker compose up --build    # site on :3000, admin on :3000/admin
 ```
 The app container pushes the schema and seeds on every start (idempotent). It runs in production mode, so session cookies are `Secure`: use `http://localhost` (Chrome/Firefox accept this), not a LAN IP.
 
+## Quality checks
+```bash
+npm run typecheck   # tsc
+npm test            # vitest: session tokens, 2FA codes, markdown safety, admin middleware
+npm run smoke       # black-box checks against a running build (BASE=http://localhost:3000)
+```
+GitHub Actions (`.github/workflows/ci.yml`) runs all of it on every push against a Postgres service: typecheck, tests, build, schema push + seed, then smoke tests on the production server.
+
+## SEO and operations
+- Set `SITE_URL` (e.g. `https://you.dev`) so canonical links, the sitemap and social cards use your real origin. Edit your **tagline** in Settings: it becomes the meta description.
+- Generated: `/sitemap.xml`, `/robots.txt` (admin and API disallowed), a social preview image at `/opengraph-image` built from your name and tagline, a favicon, JSON-LD `Person` data (contact links become `sameAs`), and themed 404/error pages.
+- `/api/health` returns 200 only when the database answers; point your uptime monitor there.
+- The public page sends `s-maxage=30`, so CDN-served visitors see admin edits within about 30 seconds.
+- Not done: a Content-Security-Policy (needs per-request nonces with Next's inline scripts).
+
 ## Free deployment
 1. **Neon** (free Postgres): create a project, copy the *pooled* connection string.
 2. **Cloudinary** (free): copy cloud name, API key and secret.

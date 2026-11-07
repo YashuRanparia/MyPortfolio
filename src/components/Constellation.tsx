@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Chat from './Chat';
-import Md from './Md';
+import dynamic from 'next/dynamic';
+const Md = dynamic(() => import('./Md'));
 
 export type NodeData = { id: number; title: string; summary: string; body: string; url: string; imageUrl: string; tags: string[] };
 export type HubData = { id: string; name: string; blurb: string; color: string; x: number; y: number; nodes: NodeData[] };
@@ -45,17 +46,29 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl, chat
       return { ...n, x: h.x + Math.cos(ang) * dist, y: h.y + Math.sin(ang) * dist, r: 7 + rnd(i + hi) * 3, ph: rnd(i * 7 + hi) * 6, hub: h };
     }));
 
+    const byHub = new Map(hubs.map((h) => [h, stars.filter((s) => s.hub === h)]));
     const resize = () => { W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(DPR, 0, 0, DPR, 0, 0); };
-    resize(); addEventListener('resize', resize);
+    resize(); const onResize = () => { resize(); if (!selRef.current) tgt.z = homeZ(); };
+    addEventListener('resize', onResize);
     cam.z = tgt.z = homeZ();
     const toS = (x: number, y: number, l = 1) => [(x - cam.x * l) * cam.z + W / 2, (y - cam.y * l) * cam.z + H / 2];
     const toW = (sx: number, sy: number) => [(sx - W / 2) / cam.z + cam.x, (sy - H / 2) / cam.z + cam.y];
     api.current = { fly: (x, y, z) => { tgt.x = x; tgt.y = y; tgt.z = z; }, homeZ, stars };
 
+    // One pre-rendered radial sprite per colour instead of building a gradient per star per frame.
+    const sprites = new Map<string, HTMLCanvasElement>();
+    function sprite(col: string) {
+      let c = sprites.get(col);
+      if (!c) {
+        c = document.createElement('canvas'); c.width = c.height = 128;
+        const g = c.getContext('2d')!, gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+        gr.addColorStop(0, col); gr.addColorStop(.25, col + '55'); gr.addColorStop(1, col + '00');
+        g.fillStyle = gr; g.fillRect(0, 0, 128, 128); sprites.set(col, c);
+      }
+      return c;
+    }
     function glow(x: number, y: number, r: number, col: string, a = 1) {
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
-      g.addColorStop(0, col); g.addColorStop(.25, col + '55'); g.addColorStop(1, col + '00');
-      ctx.globalAlpha = a; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 4, 0, 7); ctx.fill();
+      ctx.globalAlpha = a; ctx.drawImage(sprite(col), x - r * 4, y - r * 4, r * 8, r * 8);
       ctx.globalAlpha = 1; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, r * .35, 0, 7); ctx.fill();
     }
 
@@ -69,9 +82,7 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl, chat
       const mvLen = Math.hypot(dx0, dy0) || 1;
       for (const h of hubs) { // nebula clouds
         const [nx, ny] = toS(h.x, h.y, .85), r = (380 + Math.sin(t * .4 + h.x) * 30) * cam.z;
-        const g = ctx.createRadialGradient(nx, ny, 0, nx, ny, r);
-        g.addColorStop(0, h.color + '1c'); g.addColorStop(1, h.color + '00');
-        ctx.fillStyle = g; ctx.fillRect(nx - r, ny - r, r * 2, r * 2);
+        ctx.globalAlpha = .22; ctx.drawImage(sprite(h.color), nx - r, ny - r, r * 2, r * 2); ctx.globalAlpha = 1;
       }
       for (const s of bg) {
         const [x, y] = toS(s.x, s.y, s.l * .6);
@@ -101,12 +112,13 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl, chat
       for (const h of hubs) {
         const [hx, hy] = toS(h.x, h.y);
         ctx.strokeStyle = '#ffffff14'; ctx.setLineDash([4, 8]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(hx, hy); ctx.stroke(); ctx.setLineDash([]);
-        for (const n of stars.filter((s) => s.hub === h)) {
+        const mine = byHub.get(h)!;
+        for (const n of mine) {
           const [nx, ny] = toS(n.x, n.y);
           ctx.strokeStyle = h.color + (active === h || hover === n ? '99' : '33');
           ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(nx, ny); ctx.stroke();
-          const ns = stars.filter((q) => q.hub === h), nxt = ns[(ns.indexOf(n) + 1) % ns.length];
-          if (ns.length > 2) { const [rx, ry] = toS(nxt.x, nxt.y); ctx.strokeStyle = h.color + '1a'; ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(rx, ry); ctx.stroke(); }
+          const nxt = mine[(mine.indexOf(n) + 1) % mine.length];
+          if (mine.length > 2) { const [rx, ry] = toS(nxt.x, nxt.y); ctx.strokeStyle = h.color + '1a'; ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(rx, ry); ctx.stroke(); }
           if (!reduce) { const p = (t * .3 + n.ph) % 1; ctx.fillStyle = h.color; ctx.globalAlpha = .7; ctx.fillRect(hx + (nx - hx) * p - 1, hy + (ny - hy) * p - 1, 2, 2); ctx.globalAlpha = 1; }
         }
       }
@@ -118,7 +130,7 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl, chat
         if (hot) hover = h;
         glow(hx, hy, hr * cam.z * (hot || active === h ? 1.25 : 1), h.color);
         ctx.fillStyle = h.color; ctx.textAlign = 'center'; ctx.font = `600 ${13 * cam.z + 3}px ui-sans-serif,sans-serif`; ctx.fillText(h.name.toUpperCase(), hx, hy - hr * cam.z * 2.4);
-        for (const n of stars.filter((s) => s.hub === h)) {
+        for (const n of byHub.get(h)!) {
           const dx = mw[0] - n.x, dy = mw[1] - n.y, d = Math.hypot(dx, dy), pull = d < 140 ? (1 - d / 140) * 10 : 0;
           const [nx, ny] = toS(n.x + Math.sin(t + n.ph) * 4 + dx / (d || 1) * pull, n.y + Math.cos(t * .8 + n.ph) * 4 + dy / (d || 1) * pull);
           const nh = d < n.r * 2.2; if (nh) hover = n;
@@ -139,20 +151,41 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl, chat
     }
     frame();
 
-    const down = (e: PointerEvent) => { dragging = { x: e.clientX, y: e.clientY }; moved = 0; cv.setPointerCapture(e.pointerId); };
+    const pts = new Map<number, { x: number; y: number }>();
+    let pinch = 0;
+    const down = (e: PointerEvent) => {
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      mouse.x = e.clientX; mouse.y = e.clientY;
+      dragging = { x: e.clientX, y: e.clientY }; moved = 0; cv.setPointerCapture(e.pointerId);
+      if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
+    };
     const move = (e: PointerEvent) => {
       mouse.x = e.clientX; mouse.y = e.clientY; setHintGone(true);
+      if (pts.has(e.pointerId)) pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 2) { // two fingers: pinch to zoom
+        const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinch) tgt.z = Math.min(2.4, Math.max(.25, tgt.z * d / pinch));
+        pinch = d; moved = 99; return;
+      }
       if (dragging) { const dx = e.clientX - dragging.x, dy = e.clientY - dragging.y; moved += Math.abs(dx) + Math.abs(dy); tgt.x -= dx / cam.z; tgt.y -= dy / cam.z; cam.x = tgt.x; cam.y = tgt.y; dragging = { x: e.clientX, y: e.clientY }; }
     };
-    const up = () => {
-      dragging = null;
-      if (moved < 6 && hover) { const s = hover as Star; ripples.push({ x: mouse.x, y: mouse.y, age: 0, col: ('hub' in s ? s.hub : (hover as HubData)).color }); choose('hub' in s ? { hub: s.hub, node: s } : { hub: hover as HubData }); }
+    const up = (e: PointerEvent) => {
+      pts.delete(e.pointerId); pinch = 0; dragging = null;
+      mouse.x = e.clientX; mouse.y = e.clientY;
+      if (moved >= 6) return;
+      // a tap never fires pointermove, so let one frame re-run the hit test at the tap position
+      requestAnimationFrame(() => {
+        if (!hover) return;
+        const s = hover as Star;
+        ripples.push({ x: mouse.x, y: mouse.y, age: 0, col: ('hub' in s ? s.hub : (hover as HubData)).color });
+        choose('hub' in s ? { hub: s.hub, node: s } : { hub: hover as HubData });
+      });
     };
     const wheel = (e: WheelEvent) => { e.preventDefault(); tgt.z = Math.min(2.4, Math.max(.25, tgt.z * (e.deltaY < 0 ? 1.1 : .9))); };
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') choose(null); };
-    cv.addEventListener('pointerdown', down); cv.addEventListener('pointermove', move); cv.addEventListener('pointerup', up);
+    cv.addEventListener('pointerdown', down); cv.addEventListener('pointermove', move); cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
     cv.addEventListener('wheel', wheel, { passive: false }); addEventListener('keydown', key);
-    return () => { cancelAnimationFrame(raf); removeEventListener('resize', resize); removeEventListener('keydown', key); cv.removeEventListener('pointerdown', down); cv.removeEventListener('pointermove', move); cv.removeEventListener('pointerup', up); cv.removeEventListener('wheel', wheel); };
+    return () => { cancelAnimationFrame(raf); removeEventListener('resize', onResize); removeEventListener('keydown', key); cv.removeEventListener('pointerdown', down); cv.removeEventListener('pointermove', move); cv.removeEventListener('pointerup', up); cv.removeEventListener('pointercancel', up); cv.removeEventListener('wheel', wheel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hubs]);
 
@@ -168,7 +201,7 @@ export default function Constellation({ hubs, siteName, tagline, resumeUrl, chat
         <button className={!sel ? 'on' : ''} onClick={() => choose(null)}>✦ Overview</button>
         {hubs.map((h) => <button key={h.id} style={{ ['--col' as string]: h.color }} className={sel?.hub === h ? 'on' : ''} onClick={() => choose({ hub: h })}>{h.name}</button>)}
       </nav>
-      <aside className={`side ${sel ? 'open' : ''}`} style={{ ['--col' as string]: col }} aria-live="polite">
+      <aside inert={!sel} className={`side ${sel ? 'open' : ''}`} style={{ ['--col' as string]: col }} aria-live="polite">
         <button className="x" aria-label="Close" onClick={() => choose(null)}>×</button>
         {sel && !sel.node && <>
           <div className="tag">{sel.hub.name}</div><h2>{sel.hub.blurb}</h2>

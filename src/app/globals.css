@@ -73,3 +73,7 @@ button.danger{background:#ff5d6c!important;color:#fff!important}
 .log{width:100%;border-collapse:collapse;font-size:.85rem}.log td{padding:.45rem .6rem;border-bottom:1px solid var(--line);color:var(--dim)}.log td:nth-child(2){color:var(--ink)}
 .dim{color:var(--dim)}
 @media(max-width:1100px){.editor{grid-template-columns:1fr}}
+/* error pages, focus, small screens */
+.lost{text-align:center;display:grid;gap:.8rem}.lost a{color:#ffcf6b}.lost button{background:#ffcf6b;color:#04050b;border:0;border-radius:8px;padding:.6rem 1rem;font-weight:600}
+:focus-visible{outline:2px solid #ffcf6b;outline-offset:2px}
+@media(max-width:700px){.hint{bottom:7.6rem}.top h1{font-size:.85rem}.resume{top:3.4rem;left:1.5rem;right:auto}.dock button{padding:.45rem .8rem}.side{padding-bottom:7rem}}

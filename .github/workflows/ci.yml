@@ -1,0 +1,35 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: constellation, POSTGRES_PASSWORD: constellation, POSTGRES_DB: constellation }
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U constellation" --health-interval 2s --health-retries 15
+    env:
+      DATABASE_URL: postgres://constellation:constellation@localhost:5433/constellation
+      SESSION_SECRET: ci-secret-ci-secret-ci-secret-ci-secret-1234
+      ADMIN_EMAIL: ci@example.com
+      ADMIN_PASSWORD: ci-password-123456
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Create schema and seed
+        run: |
+          node node_modules/drizzle-kit/bin.cjs push --force
+          npx tsx scripts/seed.mts
+      - name: Smoke test the production build
+        run: |
+          npm start &
+          npx --yes wait-on http://localhost:3000/api/health --timeout 60000
+          npm run smoke

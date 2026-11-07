@@ -2,7 +2,11 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
 export const COOKIE = process.env.NODE_ENV === 'production' ? '__Host-sid' : 'sid';
-const key = () => new TextEncoder().encode(process.env.SESSION_SECRET);
+const key = () => {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) throw new Error('SESSION_SECRET must be set to at least 32 characters');
+  return new TextEncoder().encode(secret);
+};
 const TTL = 60 * 60 * 12;
 
 export type Claims = { sub: string; v: number };
